@@ -1,0 +1,26 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bootloader_api = "0.11.7"
+bytemuck = "1.15.0"
+conquer-once = { version = "0.4.0", default-features = false }
+lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
+noto-sans-mono-bitmap = { version = "0.3.0", features = ["size_20", "size_32"] }
+pc-keyboard = "0.7.0"
+pic8259 = "0.11.0"
+slab = { version = "0.4.9", default-features = false }
+slotmap = { version = "1.0.7", default-features = false }
+spinning_top = "0.3.0"
+volatile = "0.2.6"
+x2apic = "0.4.3"
+x86_64 = "0.15.1"
+xmas-elf = "0.9.1"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
