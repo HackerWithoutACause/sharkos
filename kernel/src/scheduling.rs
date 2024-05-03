@@ -1,11 +1,11 @@
-use core::{arch::asm, sync::atomic::AtomicU64};
+use core::arch::asm;
 
-use crate::{hlt_loop, Context, Core, PROCESSES};
+use crate::{Context, Core, PROCESSES};
 
 pub unsafe extern "C" fn current_context_address() -> *mut Context {
     crate::paging::Table::activate_kernel_table();
 
-    &mut PROCESSES.lock()[Core::local().current_thread as usize].state as *mut Context
+    &mut PROCESSES.lock()[Core::local().current_thread].state as *mut Context
 }
 
 #[naked]

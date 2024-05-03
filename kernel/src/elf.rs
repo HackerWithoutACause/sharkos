@@ -1,4 +1,4 @@
-use crate::{allocator::allocate_page, paging, PHYSICAL_OFFSET};
+use crate::{allocator::allocate_page, paging};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ELFError {

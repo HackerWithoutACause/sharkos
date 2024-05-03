@@ -1,8 +1,6 @@
 use bootloader_api::info::FrameBuffer;
-use core::fmt::Write;
 use lazy_static::lazy_static;
 use spinning_top::Spinlock;
-use volatile::Volatile;
 
 lazy_static! {
     pub static ref WRITER: Spinlock<Option<Writer>> = Spinlock::new(None);
@@ -14,7 +12,7 @@ pub fn initialize(framebuffer: &'static mut FrameBuffer) {
 
 pub struct Writer {
     width: usize,
-    height: usize,
+    _height: usize,
     stride: usize,
     cursor: usize,
     line: usize,
@@ -27,16 +25,12 @@ impl Writer {
 
         Writer {
             width: framebuffer.info().width,
-            height: framebuffer.info().height,
+            _height: framebuffer.info().height,
             stride: framebuffer.info().stride,
             cursor: 0,
             line: 0,
             buffer: framebuffer.buffer_mut(),
         }
-    }
-
-    pub fn reset(&mut self) {
-        self.cursor = 0;
     }
 }
 

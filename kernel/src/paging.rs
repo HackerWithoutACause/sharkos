@@ -70,7 +70,7 @@ impl Entry {
     }
 
     fn set_flags(&mut self, flags: Flags) {
-        self.0 = self.0 | flags.0;
+        self.0 |= flags.0;
     }
 
     fn is_executable(&self) -> bool {
@@ -94,14 +94,14 @@ unsafe impl core::alloc::GlobalAlloc for VirtualAllocator {
 
     unsafe fn realloc(
         &self,
-        ptr: *mut u8,
-        layout: core::alloc::Layout,
-        new_size: usize,
+        _ptr: *mut u8,
+        _layout: core::alloc::Layout,
+        _new_size: usize,
     ) -> *mut u8 {
         todo!();
     }
 
-    unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
+    unsafe fn dealloc(&self, _ptr: *mut u8, _layout: core::alloc::Layout) {
         todo!()
     }
 }
@@ -200,7 +200,7 @@ unsafe impl core::alloc::Allocator for VirtualAllocator {
         ))
     }
 
-    unsafe fn deallocate(&self, ptr: core::ptr::NonNull<u8>, layout: core::alloc::Layout) {
+    unsafe fn deallocate(&self, _ptr: core::ptr::NonNull<u8>, layout: core::alloc::Layout) {
         todo!(
             "Implement deallocation for VirtualAllocator with layout: {:#?}",
             layout

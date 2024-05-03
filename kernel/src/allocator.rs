@@ -1,8 +1,7 @@
 use bootloader_api::info::{MemoryRegionKind, MemoryRegions};
-use core::sync::atomic::{AtomicPtr, Ordering};
 use spinning_top::Spinlock;
 
-use crate::{hlt_loop, PHYSICAL_OFFSET};
+use crate::PHYSICAL_OFFSET;
 
 // TODO: Get a better allocator
 static mut BLOCK_HEAD: Spinlock<*mut UnallocatedPage> =
@@ -75,7 +74,7 @@ pub fn allocate_page(amount: u64) -> usize {
     }
 }
 
-pub unsafe fn free_page(physical_address: u64, amount: u64) {
+pub unsafe fn _free_page(physical_address: u64, amount: u64) {
     let mut lock = unsafe { BLOCK_HEAD.lock() };
     let mut cursor = *lock;
     let mut trailing = None;

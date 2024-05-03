@@ -3,35 +3,14 @@ struct APIC(usize);
 impl APIC {
     const LVT_TIMER: usize = 0x320;
     const TICR: usize = 0x380;
-    const SIVR: usize = 0x0F0;
     const EOI: usize = 0x0B0;
 
     unsafe fn write_register(&self, offset: usize, value: u32) {
         core::ptr::write_volatile((self.0 + offset) as *mut u32, value)
     }
 
-    unsafe fn read_register(&self, offset: usize) -> u32 {
+    unsafe fn _read_register(&self, offset: usize) -> u32 {
         core::ptr::read_volatile((self.0 + offset) as *mut u32)
-    }
-}
-
-pub fn enable_timer_interrupts() {
-    unsafe {
-        let apic = APIC(0xfee0_0000usize);
-        apic.write_register(
-            APIC::LVT_TIMER,
-            apic.read_register(APIC::LVT_TIMER) & !(1 << 16),
-        );
-    }
-}
-
-pub fn disable_timer_interrupts() {
-    unsafe {
-        let apic = APIC(0xfee0_0000usize);
-        apic.write_register(
-            APIC::LVT_TIMER,
-            apic.read_register(APIC::LVT_TIMER) | 1 << 16,
-        );
     }
 }
 
@@ -40,11 +19,11 @@ pub fn disable_timer_interrupts() {
 #[repr(u8)]
 pub enum TimerMode {
     /// Timer only fires once.
-    OneShot = 0b00,
+    _OneShot = 0b00,
     /// Timer fires periodically.
     Periodic = 0b01,
     /// Timer fires at an absolute time.
-    TscDeadline = 0b10,
+    _TscDeadline = 0b10,
 }
 
 pub fn end_of_interrupt() {

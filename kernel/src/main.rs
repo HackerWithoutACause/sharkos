@@ -8,55 +8,17 @@
     asm_const,
     allocator_api
 )]
+#![allow(clippy::upper_case_acronyms)]
 
 extern crate alloc;
 
 use core::arch::asm;
 
-use alloc::collections::{BinaryHeap, VecDeque};
+use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use bootloader_api::{entry_point, BootInfo};
 
-// Normal leafs
-const EAX_VENDOR_INFO: u32 = 0x0;
-const EAX_FEATURE_INFO: u32 = 0x1;
-const EAX_CACHE_INFO: u32 = 0x2;
-const EAX_PROCESSOR_SERIAL: u32 = 0x3;
-const EAX_CACHE_PARAMETERS: u32 = 0x4;
-const EAX_MONITOR_MWAIT_INFO: u32 = 0x5;
-const EAX_THERMAL_POWER_INFO: u32 = 0x6;
-const EAX_STRUCTURED_EXTENDED_FEATURE_INFO: u32 = 0x7;
-const EAX_DIRECT_CACHE_ACCESS_INFO: u32 = 0x9;
-const EAX_PERFORMANCE_MONITOR_INFO: u32 = 0xA;
-const EAX_EXTENDED_TOPOLOGY_INFO: u32 = 0xB;
-const EAX_EXTENDED_STATE_INFO: u32 = 0xD;
-const EAX_RDT_MONITORING: u32 = 0xF;
-const EAX_RDT_ALLOCATION: u32 = 0x10;
-const EAX_SGX: u32 = 0x12;
-const EAX_TRACE_INFO: u32 = 0x14;
-const EAX_TIME_STAMP_COUNTER_INFO: u32 = 0x15;
-const EAX_FREQUENCY_INFO: u32 = 0x16;
-const EAX_SOC_VENDOR_INFO: u32 = 0x17;
-const EAX_DETERMINISTIC_ADDRESS_TRANSLATION_INFO: u32 = 0x18;
-const EAX_EXTENDED_TOPOLOGY_INFO_V2: u32 = 0x1F;
-
-// Extended leafs
-const EAX_EXTENDED_FUNCTION_INFO: u32 = 0x8000_0000;
-const EAX_EXTENDED_PROCESSOR_AND_FEATURE_IDENTIFIERS: u32 = 0x8000_0001;
-const EAX_EXTENDED_BRAND_STRING: u32 = 0x8000_0002;
-const EAX_L1_CACHE_INFO: u32 = 0x8000_0005;
-const EAX_L2_L3_CACHE_INFO: u32 = 0x8000_0006;
-const EAX_ADVANCED_POWER_MGMT_INFO: u32 = 0x8000_0007;
-const EAX_PROCESSOR_CAPACITY_INFO: u32 = 0x8000_0008;
-const EAX_TLB_1GB_PAGE_INFO: u32 = 0x8000_0019;
-const EAX_PERFORMANCE_OPTIMIZATION_INFO: u32 = 0x8000_001A;
-const EAX_CACHE_PARAMETERS_AMD: u32 = 0x8000_001D;
-const EAX_PROCESSOR_TOPOLOGY_INFO: u32 = 0x8000_001E;
-const EAX_MEMORY_ENCRYPTION_INFO: u32 = 0x8000_001F;
-const EAX_SVM_FEATURES: u32 = 0x8000_000A;
-
 const KERNEL_START: u64 = 0xFFFF_8000_0000_0000;
-// /rustc/ef8b9dcf23700f2e2265317611460d3a65c19eff/library/alloc/src/collections/binary_heap/mod.rs
 
 #[macro_export]
 macro_rules! println {
@@ -94,7 +56,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 use bootloader_api::config::{BootloaderConfig, Mapping};
 use conquer_once::spin::OnceCell;
 use spinning_top::Spinlock;
-use x2apic::lapic::LocalApic;
 use x86_64::registers::rflags::RFlags;
 use x86_64::VirtAddr;
 
@@ -121,14 +82,8 @@ mod interrupts;
 mod paging;
 mod scheduling;
 
-const CPUID_FLAG_MSR: u32 = 1 << 5;
 const CPUID_FEAT_EDX_APIC: u32 = 1 << 9;
-const IA32_APIC_BASE_MSR_ENABLE: u32 = 1 << 11;
-const IA32_APIC_BASE_MSR: u32 = 0x1B;
-
 static mut PHYSICAL_OFFSET: u64 = 0;
-static APIC: conquer_once::spin::OnceCell<Spinlock<LocalApic>> =
-    conquer_once::spin::OnceCell::uninit();
 
 pub fn hlt_loop() -> ! {
     loop {
@@ -137,29 +92,15 @@ pub fn hlt_loop() -> ! {
 }
 static KERNEL_OFFSET: conquer_once::spin::OnceCell<u64> = conquer_once::spin::OnceCell::uninit();
 
-pub unsafe fn write_msr(register: u64, value: u64) {
-    let low = value as u32;
-    let high = (value >> 32) as u32;
-
-    unsafe {
-        asm!(
-            "wrmsr",
-            in("ecx") register,
-            in("eax") low, in("edx") high,
-            options(nostack, preserves_flags),
-        );
-    }
-}
-
 use x86_64::registers::model_specific::{Efer, EferFlags, LStar, SFMask, Star};
 
 unsafe extern "C" fn system_call_handler(
     r1: u64,
     r2: u64,
-    r3: u64,
-    r4: u64,
-    r5: u64,
-    r6: u64,
+    _r3: u64,
+    _r4: u64,
+    _r5: u64,
+    _r6: u64,
     code: u64,
 ) {
     match code {
@@ -215,7 +156,7 @@ fn initialize_usermode() {
     }
 }
 
-unsafe fn jump_usermode(user_rip: u64, stack_pointer: u64) {
+unsafe fn _jump_usermode(user_rip: u64, stack_pointer: u64) {
     // Prepare registers for sysret.
     // rcx will be loaded into RIP (instruction pointer),
     // r11 will be loaded into RFLAGS.
@@ -270,7 +211,7 @@ pub fn initialize(boot_info: &'static mut BootInfo) {
 
 static mut CORE_LOCAL: [Core; 1] = [Core::new()];
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug)]
 struct Task(u64, usize);
 
 impl From<&Process> for Task {
@@ -279,31 +220,37 @@ impl From<&Process> for Task {
     }
 }
 
-// impl PartialEq for Task {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.0 == other.0
-//     }
-// }
+impl PartialEq for Task {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
 
-// impl Eq for Task {}
+impl Eq for Task {}
 
-// impl PartialOrd for Task {
-//     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-//         Some(self.cmp(other))
-//     }
-// }
+impl PartialOrd for Task {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
-// impl Ord for Task {
-//     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-//         other.0.cmp(&self.0)
-//     }
-// }
+impl Ord for Task {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        other.0.cmp(&self.0)
+    }
+}
 
 /// Storage for variables for each core
 pub struct Core {
     thread_started: u64,
     current_thread: usize,
     queue: VecDeque<Task, VirtualAllocator>,
+}
+
+impl Default for Core {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Core {
